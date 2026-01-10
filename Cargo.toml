@@ -5,6 +5,17 @@ edition = "2024"
 description = "ECOS embedded project cargo plugin"
 authors = ["leocheng <chengkelfan@qq.com>"]
 repository = "https://github.com/ECOS-C1-SDK4Heke/cargo-ecos.git"
+license = "MIT OR Apache-2.0"
+
+include = [
+    "Cargo.toml",
+    "README.md",
+    "package.rs",
+    "src/**/*",
+    "templates/**/*",
+    "templates/**/.*",
+    "templates/**/.*/*",
+]
 
 build = "package.rs"
 

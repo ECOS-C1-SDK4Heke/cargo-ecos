@@ -1,0 +1,16 @@
+# 仅仅用于测试！！！
+
+[package]
+name = "{{project_name}}"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[package.metadata.ecos]
+ecos_project_root = true
+
+[dependencies]
+ecos_ssc1 = "0"
+
+[build-dependencies]
+cc = "1"

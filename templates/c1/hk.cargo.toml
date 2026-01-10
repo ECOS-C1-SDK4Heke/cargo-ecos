@@ -8,7 +8,7 @@ build = "build.rs"
 ecos_project_root = true
 
 [dependencies]
-ecos_ssc1 = "0"
+ecos-ssc1 = "0"
 
 [build-dependencies]
 cc = "1"

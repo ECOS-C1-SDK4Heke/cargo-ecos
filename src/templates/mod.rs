@@ -9,33 +9,74 @@ static TEMPLATES_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/templates");
 pub struct TemplateManager;
 
 impl TemplateManager {
+    /// 列出所有可用的模板
     pub fn list_templates() -> Vec<String> {
         TEMPLATES_DIR
             .dirs()
             .filter_map(|dir| {
-                dir.path()
-                    .file_name()
-                    .map(|name| name.to_string_lossy().into_owned())
+                // 检查是否包含 hk.cargo.toml
+                let has_hk_cargo = dir.files().any(|file| {
+                    file.path()
+                        .file_name()
+                        .map(|name| name == "hk.cargo.toml")
+                        .unwrap_or(false)
+                });
+
+                if has_hk_cargo {
+                    dir.path()
+                        .file_name()
+                        .map(|name| name.to_string_lossy().into_owned())
+                } else {
+                    None
+                }
             })
             .collect()
     }
 
     #[allow(dead_code)]
     pub fn template_exists(name: &str) -> bool {
-        TEMPLATES_DIR.get_dir(name).is_some()
+        TEMPLATES_DIR
+            .get_dir(name)
+            .map(|dir| {
+                dir.files().any(|file| {
+                    file.path()
+                        .file_name()
+                        .map(|file_name| file_name == "hk.cargo.toml")
+                        .unwrap_or(false)
+                })
+            })
+            .unwrap_or(false)
     }
 
     pub fn get_template<'a>(name: &'a str) -> Result<&'a Dir<'a>> {
         let static_name: &'static str = Box::leak(name.to_string().into_boxed_str());
-        TEMPLATES_DIR.get_dir(static_name).ok_or_else(|| {
+        let dir = TEMPLATES_DIR.get_dir(static_name).ok_or_else(|| {
             anyhow::anyhow!(
                 "Template '{}' not found.\nAvailable templates: {}",
                 name,
                 Self::list_templates().join(", ")
             )
-        })
+        })?;
+
+        // 验证是否是有效模板 - 包含 hk.cargo.toml
+        let has_hk_cargo = dir.files().any(|file| {
+            file.path()
+                .file_name()
+                .map(|file_name| file_name == "hk.cargo.toml")
+                .unwrap_or(false)
+        });
+
+        if !has_hk_cargo {
+            return Err(anyhow::anyhow!(
+                "Directory '{}' is not a valid template (missing hk.cargo.toml)",
+                name
+            ));
+        }
+
+        Ok(dir)
     }
 
+    /// 创建项目结构
     pub fn create_project(
         template_name: &str,
         project_dir: &Path,
@@ -46,7 +87,6 @@ impl TemplateManager {
         println!("{} Creating project structure...", style("📁").cyan());
 
         Self::create_directory_structure(template, project_dir, "")?;
-
         Self::process_template_files(template, project_dir, "", project_name)?;
 
         Ok(())
@@ -74,6 +114,7 @@ impl TemplateManager {
         Ok(())
     }
 
+    /// 处理模板文件 - hk.cargo.toml -> Cargo.toml
     fn process_template_files<'a>(
         template: &'a Dir<'a>,
         base_dir: &Path,
@@ -82,10 +123,17 @@ impl TemplateManager {
     ) -> Result<()> {
         for file in template.files() {
             let file_name = file.path().file_name().unwrap().to_string_lossy();
-            let target_path = if relative_path.is_empty() {
-                base_dir.join(&*file_name)
+
+            let target_file_name = if file_name == "hk.cargo.toml" {
+                "Cargo.toml".to_string()
             } else {
-                base_dir.join(relative_path).join(&*file_name)
+                file_name.to_string()
+            };
+
+            let target_path = if relative_path.is_empty() {
+                base_dir.join(&target_file_name)
+            } else {
+                base_dir.join(relative_path).join(&target_file_name)
             };
 
             let content = std::str::from_utf8(file.contents())
