@@ -1,6 +1,6 @@
 [package]
 name = "cargo-ecos"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "ECOS embedded project cargo plugin"
 authors = ["leocheng <chengkelfan@qq.com>"]
@@ -38,6 +38,7 @@ toml = "0.9.11"
 walkdir = "2.5"
 include_dir = "0.7"
 dirs = "6.0"
+chrono = "0.4"
 
 [build-dependencies]
 built = "0.8"

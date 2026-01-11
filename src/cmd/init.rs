@@ -70,6 +70,15 @@ impl Command for InitCommand {
         // 创建必要的额外目录
         self.create_extra_directories(&target_dir)?;
 
+        // 尝试初始化 Git 仓库
+        let git_initialized = match self.init_empty_git_folder(&target_dir, &project_name) {
+            Ok(_) => true,
+            Err(e) => {
+                println!("  {}: {}", style("Git skipped").yellow().bold(), e);
+                false
+            }
+        };
+
         println!(
             "✅ {} project initialized successfully!",
             style("ECOS").green()
@@ -79,6 +88,29 @@ impl Command for InitCommand {
             style(target_dir.display()).cyan()
         );
         println!("🎯 Target platform: {}", style(&template_name).cyan());
+
+        if git_initialized {
+            println!(
+                "\n📦 {} Git repository initialized.",
+                style("Next steps:").bold().cyan()
+            );
+            println!("  {}", style("To connect to a remote repository:").dim());
+            println!(
+                "  {}",
+                style("> git remote add origin git@<your remote repository>.git").dim()
+            );
+            println!("  {}", style("To rename the default branch:").dim());
+            println!("  {}", style("> git branch -M main").dim());
+            println!("  {}", style("To push your changes:").dim());
+            println!("  {}", style("> git push -u origin main").dim());
+            println!("  {}", style("To make further changes:").dim());
+            println!("  {}", style("> git add .").dim());
+            println!(
+                "  {}",
+                style("> git commit -a -m \"<type>: description\"").dim()
+            );
+            println!("  {}", style("> git push").dim());
+        }
 
         Ok(())
     }
@@ -215,6 +247,94 @@ impl InitCommand {
                 println!("  Created directory: {}", style(dir_path.display()).dim());
             }
         }
+        Ok(())
+    }
+
+    /// 初始化空的 .git 项目
+    fn init_empty_git_folder(&self, target_dir: &Path, project_name: &str) -> Result<()> {
+        use anyhow::Context;
+
+        // 检查git是否可用
+        let git_check = std::process::Command::new("git").arg("--version").output();
+
+        if git_check.is_err() {
+            return Err(anyhow::anyhow!("Git is not installed or not found in PATH"));
+        }
+
+        // 检查是否已经存在.git目录
+        let git_dir = target_dir.join(".git");
+        if git_dir.exists() {
+            return Err(anyhow::anyhow!(
+                "Git repository already exists at {}",
+                target_dir.display()
+            ));
+        }
+
+        println!("  {}", style("Initializing Git repository...").dim());
+
+        // 初始化git仓库
+        let init_result = std::process::Command::new("git")
+            .arg("init")
+            .arg("--quiet")
+            .current_dir(target_dir)
+            .status()
+            .with_context(|| format!("Failed to run git init in {}", target_dir.display()))?;
+
+        if !init_result.success() {
+            return Err(anyhow::anyhow!("Git initialization failed"));
+        }
+
+        println!("    {}", style("✓ Git repository initialized").green());
+
+        // 添加所有文件
+        let add_result = std::process::Command::new("git")
+            .arg("add")
+            .arg(".")
+            .current_dir(target_dir)
+            .status();
+
+        if let Ok(status) = add_result {
+            if status.success() {
+                println!("    {}", style("✓ Added all files to staging").green());
+            }
+        }
+
+        // 创建初始提交
+        let commit_message = format!(
+            "Initialized: Project [{}] at {}",
+            project_name,
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
+        );
+        let commit_result = std::process::Command::new("git")
+            .arg("commit")
+            .arg("-a")
+            .arg("-m")
+            .arg(&commit_message)
+            .arg("--quiet")
+            .current_dir(target_dir)
+            .status();
+
+        match commit_result {
+            Ok(status) if status.success() => {
+                println!(
+                    "    {}",
+                    style(format!("✓ Initial commit: {}", commit_message)).green()
+                );
+            }
+            Ok(_) => {
+                println!(
+                    "    {}",
+                    style("⚠ Initial commit failed (no changes or other issue)").yellow()
+                );
+            }
+            Err(_) => {
+                println!(
+                    "    {}",
+                    style("⚠ Could not create initial commit").yellow()
+                );
+            }
+        }
+
         Ok(())
     }
 }
