@@ -22,12 +22,16 @@ pub struct FlashCommand {
     file: Option<String>,
 
     /// Force rebuild before flashing (pass args to cargo ecos build)
-    #[arg(short, long, num_args = 0.., allow_hyphen_values = true)]
-    build: Option<Vec<String>>,
+    #[arg(short, long)]
+    build: bool,
 
-    /// Flash release build (implies --build -- --release)
+    /// Flash release build (implies --build --release)
     #[arg(short = 'r', long)]
     release: bool,
+
+    /// Additional arguments to pass to cargo ecos build
+    #[arg(last = true, allow_hyphen_values = true)]
+    extra_build_args: Vec<String>,
 }
 
 impl Command for FlashCommand {
@@ -60,9 +64,9 @@ impl Command for FlashCommand {
                 .join(format!("{}.bin", project_name));
 
             // 检查是否需要构建
-            let should_build = match (&self.build, &self.release, default_bin.exists()) {
+            let should_build = match (self.build, self.release, default_bin.exists()) {
                 // 明确要求构建（--build 或 --release）
-                (Some(_), _, _) | (_, true, _) => true,
+                (true, _, _) | (_, true, _) => true,
                 // 安全模式且文件存在
                 (_, _, true) if self.safe => false,
                 // 文件不存在且不是安全模式
@@ -131,23 +135,12 @@ impl FlashCommand {
         let mut build_cmd = StdCommand::new("cargo");
         build_cmd.args(["ecos", "build"]);
 
-        // 检查是否需要添加 --release
-        let mut need_release = self.release;
-
-        // 处理构建参数
-        if let Some(build_args) = &self.build {
-            for arg in build_args {
-                if arg == "--release" {
-                    need_release = true;
-                } else {
-                    build_cmd.arg(arg);
-                }
-            }
+        if self.release {
+            build_cmd.arg("--release");
         }
 
-        // 如果需要 release，添加一次，避免多次重复添加...
-        if need_release {
-            build_cmd.arg("--release");
+        for arg in &self.extra_build_args {
+            build_cmd.arg(arg);
         }
 
         let status = build_cmd
