@@ -9,7 +9,7 @@ ecos_project_root = true
 ecos_flash_cmd_to = "{{device_path}}"
 
 [dependencies]
-ecos-ssc1 = "0"
+ecos-ssc1 = { version = "0", features = [] }
 
 [build-dependencies]
 cc = "1"
