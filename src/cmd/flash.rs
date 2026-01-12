@@ -2,6 +2,7 @@ use crate::cmd::Command;
 use anyhow::Result;
 use clap::Args;
 use console::style;
+use humansize::{DECIMAL, format_size};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCommand, Stdio};
@@ -24,7 +25,7 @@ pub struct FlashCommand {
     #[arg(short, long, num_args = 0.., allow_hyphen_values = true)]
     build: Option<Vec<String>>,
 
-    /// Flash release build (implies --build --release)
+    /// Flash release build (implies --build -- --release)
     #[arg(short = 'r', long)]
     release: bool,
 }
@@ -104,9 +105,19 @@ impl Command for FlashCommand {
         // 执行复制操作
         self.copy_bin_to_target(&bin_path, &target_path, &project_name)?;
 
+        // 获取源文件的大小信息
+        let src_metadata = fs::metadata(&bin_path)?;
+        let src_size = src_metadata.len();
+        let src_bits = src_size * 8;
+
         println!("✅ Firmware flashed successfully!");
         println!("  From: {}", style(bin_path.display()).dim());
         println!("  To:   {}", style(target_path.display()).dim());
+        println!(
+            "  Size: {} ({})",
+            style(format_size(src_size, DECIMAL)).cyan(),
+            style(format!("{} bits", src_bits)).dim()
+        );
 
         Ok(())
     }
@@ -120,29 +131,23 @@ impl FlashCommand {
         let mut build_cmd = StdCommand::new("cargo");
         build_cmd.args(["ecos", "build"]);
 
-        // 处理 release 标志
-        if self.release {
-            build_cmd.arg("--release");
-        }
+        // 检查是否需要添加 --release
+        let mut need_release = self.release;
 
-        // 传递构建参数（透传给 cargo ecos build）
+        // 处理构建参数
         if let Some(build_args) = &self.build {
             for arg in build_args {
-                build_cmd.arg(arg);
+                if arg == "--release" {
+                    need_release = true;
+                } else {
+                    build_cmd.arg(arg);
+                }
             }
         }
 
-        // 如果指定了 release，但 build_args 中没有 --release，确保添加
-        if self.release {
-            let has_release_in_args = self
-                .build
-                .as_ref()
-                .map(|args| args.iter().any(|a| a == "--release"))
-                .unwrap_or(false);
-
-            if !has_release_in_args {
-                build_cmd.arg("--release");
-            }
+        // 如果需要 release，添加一次，避免多次重复添加...
+        if need_release {
+            build_cmd.arg("--release");
         }
 
         let status = build_cmd
@@ -297,7 +302,7 @@ impl FlashCommand {
 
         println!(
             "  {} Copied {} to {}",
-            style("✓").green(),
+            style("✅").green(),
             style(project_name).bold(),
             style(destination.display()).dim()
         );

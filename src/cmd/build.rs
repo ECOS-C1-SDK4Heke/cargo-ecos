@@ -8,7 +8,7 @@ use std::process::{Command as StdCommand, Stdio};
 #[derive(Args)]
 pub struct BuildCommand {
     /// Build in release mode
-    #[arg(long)]
+    #[arg(long, short)]
     release: bool,
 
     /// Skip memory report generation
