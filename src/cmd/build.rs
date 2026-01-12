@@ -15,6 +15,10 @@ pub struct BuildCommand {
     #[arg(long)]
     no_mem_report: bool,
 
+    /// Echo sections.info content after build
+    #[arg(short, long)]
+    sections: bool,
+
     /// Additional arguments to pass to cargo build
     #[arg(last = true, num_args = 0.., allow_hyphen_values = true)]
     args: Vec<String>,
@@ -75,6 +79,10 @@ impl Command for BuildCommand {
         }
 
         println!("✅ {} Build completed successfully!", style("ECOS").green());
+
+        if self.sections {
+            self.print_sections_info(&project_root)?;
+        }
 
         Ok(())
     }
@@ -216,6 +224,65 @@ impl BuildCommand {
             println!("  Expected at: {}", mem_report_mk.display());
         }
 
+        // 复制 sections.info 到 build/ 目录
+        let out_dir = project_root.join("build");
+        std::fs::create_dir_all(&out_dir)?;
+
+        let sections_source = elf_path.parent().unwrap().join("sections.info");
+        if sections_source.exists() {
+            let sections_dest = out_dir.join("sections.info");
+            if let Err(e) = std::fs::copy(&sections_source, &sections_dest) {
+                println!(
+                    "{} Failed to copy sections.info: {}",
+                    style("⚠️").yellow(),
+                    e
+                );
+            } else {
+                println!("{} Copied sections.info to build ...", style("✅").green());
+            }
+        } else {
+            println!(
+                "{} sections.info not found at expected location",
+                style("⚠️").yellow()
+            );
+            println!("  Expected: {}", sections_source.display());
+        }
+
+        Ok(())
+    }
+
+    /// 打印 sections.info 文件内容
+    fn print_sections_info(&self, project_root: &Path) -> Result<()> {
+        println!("\n{} Sections information:", style("📄").cyan());
+        println!("{}", "-".repeat(80));
+
+        let path = project_root.join("build/sections.info");
+
+        if path.exists() {
+            match std::fs::read_to_string(&path) {
+                Ok(content) => {
+                    println!("📁 File: {}", path.display());
+                    println!("{}", content);
+                }
+                Err(e) => {
+                    println!(
+                        "{} Failed to read {}: {}",
+                        style("⚠️").yellow(),
+                        path.display(),
+                        e
+                    );
+                }
+            }
+        } else {
+            println!(
+                "{} sections.info not found at {}",
+                style("⚠️").yellow(),
+                path.display()
+            );
+            println!("Note: This file is generated only when memory report is enabled");
+        }
+
+        println!("{}", "-".repeat(80));
         Ok(())
     }
 }
