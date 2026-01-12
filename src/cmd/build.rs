@@ -99,7 +99,7 @@ impl BuildCommand {
 
         // ELF 文件路径
         let elf = project_root.join(format!(
-            "target/riscv32im-unknown-none-elf/{}/{}",
+            "target/riscv32imac-unknown-none-elf/{}/{}",
             profile, project_name
         ));
         if !elf.exists() {
@@ -174,7 +174,7 @@ impl BuildCommand {
         let profile = if self.release { "release" } else { "debug" };
         let project_name = extract_project_name(project_root)?;
         let elf_path = project_root.join(format!(
-            "target/riscv32im-unknown-none-elf/{}/{}",
+            "target/riscv32imac-unknown-none-elf/{}/{}",
             profile, project_name
         ));
 

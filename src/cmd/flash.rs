@@ -31,7 +31,7 @@ pub struct FlashCommand {
 
     /// Additional arguments to pass to cargo ecos build
     #[arg(last = true, allow_hyphen_values = true)]
-    extra_build_args: Vec<String>,
+    args: Vec<String>,
 }
 
 impl Command for FlashCommand {
@@ -139,7 +139,7 @@ impl FlashCommand {
             build_cmd.arg("--release");
         }
 
-        for arg in &self.extra_build_args {
+        for arg in &self.args {
             build_cmd.arg(arg);
         }
 

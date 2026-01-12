@@ -44,6 +44,5 @@ humansize = "2.1"
 [build-dependencies]
 built = "0.8"
 
-
-[package.metadata]
+ [package.metadata]
 default-features = false
