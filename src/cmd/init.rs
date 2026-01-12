@@ -73,10 +73,10 @@ impl Command for InitCommand {
             };
 
             let input = Input::<String>::new()
-                .with_prompt(
-                    "Flash device path (press Enter to skip, will require --path when flashing)",
-                )
-                .with_initial_text(&default_flash)
+                .with_prompt(format!(
+                    "Flash device path (press Enter to skip, e.g. {})",
+                    default_flash
+                ))
                 .allow_empty(true)
                 .validate_with(|input: &String| {
                     if input.is_empty() {
@@ -133,7 +133,7 @@ impl Command for InitCommand {
         if !flash_path.is_empty() {
             println!("⚡ Flash path: {}", style(&flash_path).cyan());
             println!(
-                "  {} Use 'cargo ecos flash' to copy firmware to this path",
+                "{} Use 'cargo ecos flash' to copy firmware to this path",
                 style("💡").dim()
             );
         } else {
