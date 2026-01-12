@@ -82,7 +82,7 @@ fn compile_c_files(c_files: &[PathBuf], include_dirs: &[PathBuf]) {
 
     build
         .flag("-mabi=ilp32")
-        .flag("-march=rv32im")
+        .flag("-march=rv32imac")
         .flag("-ffreestanding")
         .flag("-nostdlib")
         .opt_level(2)
@@ -121,7 +121,7 @@ fn compile_startup_asm(sdk_path: &Path) {
     Command::new("riscv64-unknown-elf-as")
         .args(&[
             "-mabi=ilp32",
-            "-march=rv32im",
+            "-march=rv32imac",
             "-o",
             start_o.to_str().expect("Invalid path"),
             modified_start_s.to_str().expect("Invalid path"),
