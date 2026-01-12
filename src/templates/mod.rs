@@ -175,8 +175,7 @@ impl TemplateManager {
             processed = processed.replace("{{device_path}}", "\"\"");
         } else {
             let processed_device_path = device_path.replace('\\', "\\\\").replace('"', "\\\"");
-            processed =
-                processed.replace("{{device_path}}", &format!("\"{}\"", processed_device_path));
+            processed = processed.replace("{{device_path}}", &processed_device_path);
         }
 
         processed

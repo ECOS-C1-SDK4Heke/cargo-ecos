@@ -178,7 +178,11 @@ impl FlashCommand {
 
         // 解析 TOML 查找 flash 路径配置
         if let Some(flash_path) = Self::extract_flash_path_from_toml(&content) {
-            if flash_path.is_empty() {
+            if flash_path.is_empty()
+                || flash_path.starts_with("default flash path")
+                || flash_path.contains("not set")
+                || flash_path.contains("TODO:")
+            {
                 return Err(anyhow::anyhow!(
                     "Flash path not configured.\n\
                      \nOptions:\n\

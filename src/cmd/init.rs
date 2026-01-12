@@ -60,13 +60,13 @@ impl Command for InitCommand {
         // 检查目录状态
         self.check_directory_status(&target_dir)?;
 
-        // 获取 flash 设备路径（在选择了模板之后）
+        // 获取 flash 设备路径
         let flash_path = if let Some(path) = &self.flash {
             // 如果通过命令行指定了，就使用它
             path.clone()
         } else {
             // 交互式询问 flash 路径，允许为空
-            let default_flash = if cfg!(windows) {
+            let sample_flash = if cfg!(windows) {
                 "E:\\".to_string()
             } else {
                 "/mnt/e".to_string()
@@ -75,7 +75,7 @@ impl Command for InitCommand {
             let input = Input::<String>::new()
                 .with_prompt(format!(
                     "Flash device path (press Enter to skip, e.g. {})",
-                    default_flash
+                    sample_flash
                 ))
                 .allow_empty(true)
                 .validate_with(|input: &String| {
@@ -83,9 +83,7 @@ impl Command for InitCommand {
                         // 允许为空，表示不配置默认路径
                         Ok(())
                     } else {
-                        // 检查路径是否有效
-                        let path = Path::new(input);
-                        if path.is_absolute() {
+                        if input.is_empty() || Path::new(input).is_absolute() {
                             Ok(())
                         } else {
                             Err("Please enter an absolute path or leave empty")
@@ -94,7 +92,12 @@ impl Command for InitCommand {
                 })
                 .interact()?;
 
-            input
+            // 如果没有配置默认路径，则使用提示文本
+            if input.is_empty() {
+                format!("default flash path (e.g. {}) is not set", sample_flash)
+            } else {
+                input
+            }
         };
 
         // 创建项目
