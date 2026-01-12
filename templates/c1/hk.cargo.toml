@@ -6,6 +6,7 @@ build = "build.rs"
 
 [package.metadata.ecos]
 ecos_project_root = true
+ecos_flash_cmd_to = "{{device_path}}"
 
 [dependencies]
 ecos-ssc1 = "0"

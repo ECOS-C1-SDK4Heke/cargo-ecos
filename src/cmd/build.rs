@@ -16,7 +16,7 @@ pub struct BuildCommand {
     no_mem_report: bool,
 
     /// Additional arguments to pass to cargo build
-    #[arg(last = true)]
+    #[arg(last = true, num_args = 0.., allow_hyphen_values = true)]
     args: Vec<String>,
 }
 

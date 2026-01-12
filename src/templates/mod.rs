@@ -81,13 +81,14 @@ impl TemplateManager {
         template_name: &str,
         project_dir: &Path,
         project_name: &str,
+        device_path: &str,
     ) -> Result<()> {
         let template = Self::get_template(template_name)?;
 
         println!("{} Creating project structure...", style("📁").cyan());
 
         Self::create_directory_structure(template, project_dir, "")?;
-        Self::process_template_files(template, project_dir, "", project_name)?;
+        Self::process_template_files(template, project_dir, "", project_name, device_path)?;
 
         Ok(())
     }
@@ -120,6 +121,7 @@ impl TemplateManager {
         base_dir: &Path,
         relative_path: &str,
         project_name: &str,
+        device_path: &str,
     ) -> Result<()> {
         for file in template.files() {
             let file_name = file.path().file_name().unwrap().to_string_lossy();
@@ -139,7 +141,8 @@ impl TemplateManager {
             let content = std::str::from_utf8(file.contents())
                 .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in template file: {}", e))?;
 
-            let processed_content = Self::process_template_content(content, project_name);
+            let processed_content =
+                Self::process_template_content(content, project_name, device_path);
             std::fs::write(&target_path, processed_content)?;
 
             println!("  📄 Created: {}", style(target_path.display()).dim());
@@ -153,14 +156,30 @@ impl TemplateManager {
                 format!("{}/{}", relative_path, dir_name)
             };
 
-            Self::process_template_files(subdir, base_dir, &new_relative, project_name)?;
+            Self::process_template_files(
+                subdir,
+                base_dir,
+                &new_relative,
+                project_name,
+                device_path,
+            )?;
         }
 
         Ok(())
     }
 
-    fn process_template_content(content: &str, project_name: &str) -> String {
-        content.replace("{{project_name}}", project_name)
+    fn process_template_content(content: &str, project_name: &str, device_path: &str) -> String {
+        let mut processed = content.replace("{{project_name}}", project_name);
+
+        if device_path.is_empty() {
+            processed = processed.replace("{{device_path}}", "\"\"");
+        } else {
+            let processed_device_path = device_path.replace('\\', "\\\\").replace('"', "\\\"");
+            processed =
+                processed.replace("{{device_path}}", &format!("\"{}\"", processed_device_path));
+        }
+
+        processed
     }
 
     pub fn install_templates_to_system() -> Result<()> {

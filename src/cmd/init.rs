@@ -19,6 +19,10 @@ pub struct InitCommand {
     /// Force overwrite existing files
     #[arg(short, long)]
     force: bool,
+
+    /// Where will be copy/flash to (e.g., /mnt/e or E:\\)
+    #[arg(long)]
+    flash: Option<String>,
 }
 
 impl Command for InitCommand {
@@ -56,6 +60,43 @@ impl Command for InitCommand {
         // 检查目录状态
         self.check_directory_status(&target_dir)?;
 
+        // 获取 flash 设备路径（在选择了模板之后）
+        let flash_path = if let Some(path) = &self.flash {
+            // 如果通过命令行指定了，就使用它
+            path.clone()
+        } else {
+            // 交互式询问 flash 路径，允许为空
+            let default_flash = if cfg!(windows) {
+                "E:\\".to_string()
+            } else {
+                "/mnt/e".to_string()
+            };
+
+            let input = Input::<String>::new()
+                .with_prompt(
+                    "Flash device path (press Enter to skip, will require --path when flashing)",
+                )
+                .with_initial_text(&default_flash)
+                .allow_empty(true)
+                .validate_with(|input: &String| {
+                    if input.is_empty() {
+                        // 允许为空，表示不配置默认路径
+                        Ok(())
+                    } else {
+                        // 检查路径是否有效
+                        let path = Path::new(input);
+                        if path.is_absolute() {
+                            Ok(())
+                        } else {
+                            Err("Please enter an absolute path or leave empty")
+                        }
+                    }
+                })
+                .interact()?;
+
+            input
+        };
+
         // 创建项目
         println!(
             "{} Creating project '{}' with template '{}'...",
@@ -65,7 +106,7 @@ impl Command for InitCommand {
         );
 
         // 使用 TemplateManager 创建项目（内部处理 hk.cargo.toml -> Cargo.toml ）
-        TemplateManager::create_project(&template_name, &target_dir, &project_name)?;
+        TemplateManager::create_project(&template_name, &target_dir, &project_name, &flash_path)?;
 
         // 创建必要的额外目录
         self.create_extra_directories(&target_dir)?;
@@ -88,6 +129,20 @@ impl Command for InitCommand {
             style(target_dir.display()).cyan()
         );
         println!("🎯 Target platform: {}", style(&template_name).cyan());
+
+        if !flash_path.is_empty() {
+            println!("⚡ Flash path: {}", style(&flash_path).cyan());
+            println!(
+                "  {} Use 'cargo ecos flash' to copy firmware to this path",
+                style("💡").dim()
+            );
+        } else {
+            println!("{} Flash path not configured", style("⚠️").yellow());
+            println!(
+                "  {} Use 'cargo ecos flash --path <path>' to specify target when flashing",
+                style("💡").dim()
+            );
+        }
 
         if git_initialized {
             println!(

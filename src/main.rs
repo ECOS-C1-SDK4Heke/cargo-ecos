@@ -6,7 +6,8 @@ use clap::{Parser, Subcommand};
 #[allow(unused)]
 use cmd::install::{InstallCommand, UninstallCommand};
 use cmd::{
-    Command, build::BuildCommand, clean::CleanCommand, config::ConfigCommand, init::InitCommand,
+    Command, build::BuildCommand, clean::CleanCommand, config::ConfigCommand, flash::FlashCommand,
+    init::InitCommand,
 };
 
 #[derive(Parser)]
@@ -28,10 +29,13 @@ enum EcosCommands {
     /// Build ECOS firmware
     Build(BuildCommand),
 
+    /// Flash firmware to target device
+    Flash(FlashCommand),
+
     /// Clean all build artifacts
     Clean(CleanCommand),
 
-    /// Install templates to system
+    /// Install templates to system (dev
     #[cfg_attr(not(feature = "install"), doc = "")]
     #[cfg_attr(not(feature = "install"), command(hide = true))]
     #[cfg(feature = "install")]
@@ -52,6 +56,7 @@ fn main() -> anyhow::Result<()> {
         EcosCommands::Config(cmd) => cmd.execute(),
         EcosCommands::Build(cmd) => cmd.execute(),
         EcosCommands::Clean(cmd) => cmd.execute(),
+        EcosCommands::Flash(cmd) => cmd.execute(),
         #[cfg(feature = "install")]
         EcosCommands::Install(cmd) => cmd.execute(),
         #[cfg(feature = "install")]
