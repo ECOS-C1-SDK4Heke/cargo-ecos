@@ -3,7 +3,7 @@
 仿Vite的项目模板创建+构建插件
 
 ```
-# git clone 本仓库 && cd xxx && cargo install --path .
+# git clone 本仓库 && cd xxx && cargo install --path . 或者：
 cargo install cargo-ecos
 
 cargo ecos init [project_name] [-f] [--template <name>] [--flash <path>]
@@ -13,6 +13,9 @@ cargo ecos flash [-s] [-p <path>] [-f <file>] [-b [-- args...]] [-r [-- args...]
 cargo ecos clean [-a]
 
 cargo uninstall cargo-ecos
+
+# 推荐常用命令：
+cargo ecos flash -r -- -s
 ```
 
-todo-list：见template目录
+> todo-list：见template目录

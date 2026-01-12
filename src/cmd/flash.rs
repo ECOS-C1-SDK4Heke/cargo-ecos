@@ -9,7 +9,7 @@ use std::process::{Command as StdCommand, Stdio};
 
 #[derive(Args)]
 pub struct FlashCommand {
-    /// Safe mode: only flash if .bin exists, don't build
+    /// Safe mode: only flash if .bin exists, don't auto build else
     #[arg(short, long)]
     safe: bool,
 
@@ -25,7 +25,7 @@ pub struct FlashCommand {
     #[arg(short, long)]
     build: bool,
 
-    /// Flash release build (implies --build --release)
+    /// Flash release build (implies --build -- --release)
     #[arg(short = 'r', long)]
     release: bool,
 
