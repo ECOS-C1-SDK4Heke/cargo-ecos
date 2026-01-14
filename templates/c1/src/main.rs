@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use ecos_ssc1::{ecos_main, println};
+use ecos_ssc1::ecos_main;
 
 #[ecos_main]
 fn main() -> ! {
