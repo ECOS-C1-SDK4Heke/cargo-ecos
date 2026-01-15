@@ -2,7 +2,8 @@
 mod cmd;
 mod templates;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, crate_version};
+
 #[allow(unused)]
 use cmd::install::{InstallCommand, UninstallCommand};
 use cmd::{
@@ -13,12 +14,14 @@ use cmd::{
 #[derive(Parser)]
 #[command(name = "cargo")]
 #[command(bin_name = "cargo")]
+#[command(version = crate_version!(), propagate_version = true)]
 enum CargoCli {
     #[command(subcommand)]
     Ecos(EcosCommands),
 }
 
 #[derive(Subcommand)]
+#[command(version = crate_version!())]
 enum EcosCommands {
     /// Initialize a new ECOS project
     Init(InitCommand),
@@ -46,6 +49,9 @@ enum EcosCommands {
     #[cfg_attr(not(feature = "install"), command(hide = true))]
     #[cfg(feature = "install")]
     Uninstall(UninstallCommand),
+
+    /// Show version information
+    Version,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -61,5 +67,9 @@ fn main() -> anyhow::Result<()> {
         EcosCommands::Install(cmd) => cmd.execute(),
         #[cfg(feature = "install")]
         EcosCommands::Uninstall(cmd) => cmd.execute(),
+        EcosCommands::Version => {
+            println!("cargo-ecos v{}", crate_version!());
+            Ok(())
+        }
     }
 }

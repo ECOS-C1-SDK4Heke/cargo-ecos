@@ -4,8 +4,9 @@
 
 ```
 # git clone 本仓库 && cd xxx && cargo install --path . 或者：
-cargo install cargo-ecos
+cargo install cargo-ecos && cargo ecos --version
 
+cargo ecos version
 cargo ecos init [project_name] [-f] [--template <name>] [--flash <path>]
 cargo ecos config [--default [name]]   # name 默认为 "c1"
 cargo ecos build [-r <release>] [--no-mem-report] [-- args...]
