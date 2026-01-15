@@ -9,7 +9,7 @@ ecos_project_root = true
 ecos_flash_cmd_to = "{{device_path}}"
 
 [dependencies]
-ecos-ssc1 = { version = "0", features = [] }
+ecos-ssc1 = { version = "0", features = ["panic-trace"] }
 
 [build-dependencies]
 cc = "1"
